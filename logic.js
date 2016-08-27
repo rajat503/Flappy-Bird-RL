@@ -1,6 +1,7 @@
 function Pipe(x, y) {
-   this.x = x;
-   this.y = y;
+    this.width = 50;
+    this.x = x;
+    this.y = y;
 }
 
 function Bird() {
@@ -29,28 +30,41 @@ function Bird() {
     }
 }
 
-var bird=new Bird();
-bird.flap();
-setInterval(function() {
-    if(bird.y>0) {
-        bird.goDown();
-        console.log(bird.y);
-    }
-    else {
-        clearInterval(this)
-    }
-}, 100);
 
 function World() {
-    var pipes;
-    var currentBird;
+
+    var pipes = [];
+    pipes.push(new Pipe(500, 50));
+    pipes.push(new Pipe(700, 30));
+    pipes.push(new Pipe(900, 100));
+    console.log(pipes);
+
+    pipe_interval=setInterval(function() {
+        for(i=0;i<pipes.length;i++) {
+            if(pipes[i].x+pipes[i].width <= 0) {
+                pipes[i].x = 500;
+                pipes[i].y = parseInt(Math.random() * (500 - 190) + 190);
+            }
+            pipes[i].x-=100;
+            console.log(pipes[i]);
+        }
+    }, 500);
+
+    var bird=new Bird();
+    bird.flap();
+    setInterval(function() {
+        if(bird.y>0) {
+            bird.goDown();
+            console.log(bird.y);
+        }
+        else {
+            clearInterval(this)
+            clearInterval(pipe_interval)
+        }
+    }, 100);
 }
 
-
-var p1=new Pipe(10,10);
-console.log(p1)
-
-
+var hello_world=new World();
 //
 // $(document).ready(function() {
 //     var element = document.createElementNS("http://www.w3.org/2000/svg", "rect");
