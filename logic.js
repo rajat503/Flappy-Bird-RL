@@ -69,7 +69,7 @@ function World() {
                 world_reference.pipes[i].scoreCountedFlag=0;
             }
             world_reference.game_speed=(Math.min(20, Math.max(10,world_reference.score)))/10.0;
-            world_reference.pipes[i].x-=world_reference.game_speed;
+            world_reference.pipes[i].x-=2;
         }
     }, 1);
 
@@ -111,7 +111,6 @@ function World() {
             }
         }
         if(world_reference.gameover==1) {
-            alert("Game Over");
             clearInterval(this);
             clearInterval(pipe_interval);
             clearInterval(bird_interval);
@@ -171,12 +170,70 @@ $(document).ready(function() {
         }
     }, 0);
 
-    $('body').keyup(function(e){
-        if(e.keyCode == 32) {
-            if(world.gameover==0) {
-                world.bird.flap();
-                // world.bird.i=0;
-            }
+    // $('body').keyup(function(e){
+    //     if(e.keyCode == 32) {
+    //         if(world.gameover==0) {
+    //             world.bird.flap();
+    //             // world.bird.i=0;
+    //         }
+    //     }
+    // });
+
+
+    var env = {};
+    env.getNumStates = function() { return 9; }
+    env.getMaxNumActions = function() { return 2; }
+
+    // create the DQN agent
+    var spec = {}
+    spec.update = 'qlearn'; // qlearn | sarsa
+    spec.gamma = 0.9; // discount factor, [0, 1)
+    spec.epsilon = 0.1; // initial epsilon for epsilon-greedy policy, [0, 1)
+    spec.alpha = 0.1; // value function learning rate
+    spec.experience_add_every = 10; // number of time steps before we add another experience to replay memory
+    spec.experience_size = 5000; // size of experience replay memory
+    spec.learning_steps_per_iteration = 20;
+    spec.tderror_clamp = 1.0; // for robustness
+    spec.num_hidden_units = 100 // number of neurons in hidden layer
+
+    agent = new RL.DQNAgent(env, spec);
+
+    setInterval(function(){
+        s=[];
+        current_score=0;
+        for(i=0;i<world.pipes.length;i++){
+            s.push(world.pipes[i].x);
+            s.push(world.pipes[i].y);
         }
-    });
+        s.push(world.bird.y);
+        s.push(world.bird.upward_velocity);
+        s.push(world.bird.down_velocity);
+
+
+        var action = agent.act(s);
+        // console.log(action);
+        if(action==1)
+            world.bird.flap();
+
+        if(world.gameover==1){
+            reward=-1000;
+            world=new World();
+            current_score=0;
+        }
+        else {
+            reward=1
+        }
+        // else {
+        //     if(world.score>current_score) {
+        //         reward=10000*world.score;
+        //         current_score=world.score;
+        //     }
+        //     else {
+        //         reward=10;
+        //     }
+        // }
+        console.log(reward);
+        agent.learn(reward);
+    }, 200);
+
 });
