@@ -9,9 +9,11 @@ var DISTANCE_BETWEEN_PIPES=380;
 var UPPER_LIMIT=ARENA_HEIGHT*0.75;
 var LOWER_LIMIT=ARENA_HEIGHT*0.25;
 var BIRD_X=ARENA_WIDTH*0.4
+
 function Pipe(x, y) {
     this.x = x;
     this.y = y;
+    this.scoreCountedFlag = 0;
 }
 
 function Bird() {
@@ -41,6 +43,7 @@ function Bird() {
 }
 
 function World() {
+    this.score=0;
     this.gameover=0;
     this.pipes=[];
     this.pipes.push(new Pipe(ARENA_WIDTH, ARENA_HEIGHT/2+BIRD_HEIGHT));
@@ -53,6 +56,7 @@ function World() {
             if(world_reference.pipes[i].x+PIPE_WIDTH <= 0) {
                 world_reference.pipes[i].x = ARENA_WIDTH;
                 world_reference.pipes[i].y = parseInt(Math.random()*(UPPER_LIMIT-LOWER_LIMIT)+LOWER_LIMIT);
+                world_reference.pipes[i].scoreCountedFlag=0;
             }
             world_reference.pipes[i].x-=2;
         }
@@ -67,6 +71,18 @@ function World() {
         else {
             clearInterval(this)
             clearInterval(pipe_interval)
+        }
+    }, 10);
+
+    scoreInterval=setInterval(function() {
+        for(i=0;i<world_reference.pipes.length;i++) {
+            if(world_reference.pipes[i].scoreCountedFlag == 0) {
+                if(BIRD_X+BIRD_WIDTH >= world_reference.pipes[i].x && world_reference.pipes[i].y < world_reference.bird.y && world_reference.pipes[i].y+PIPE_GAP > world_reference.bird.y+BIRD_HEIGHT) {
+                    world_reference.pipes[i].scoreCountedFlag = 1;
+                    world_reference.score++;
+                    console.log(world_reference.score);
+                }
+            }
         }
     }, 10);
 
@@ -87,7 +103,7 @@ function World() {
             alert("Game Over");
             clearInterval(this);
             clearInterval(pipe_interval);
-            clearInterval(bird_interval)
+            clearInterval(bird_interval);
         }
     }, 10);
 
