@@ -17,26 +17,35 @@ function Pipe(x, y) {
 }
 
 function Bird() {
+    this.down_velocity=1;
+    this.upward_velocity=1;
     this.i = 0;
     this.y=ARENA_HEIGHT/2;
     this.height=BIRD_HEIGHT;
     this.width=BIRD_WIDTH;
     var goUp = function(bird) {
         setTimeout(function() {
-            if(bird.y>=10)
-                bird.y-=10;
+            if(bird.y>=15)
+                bird.y-=bird.upward_velocity;
             else
                 bird.y=0
             bird.i=bird.i+1;
-            if(bird.i<4)
+            bird.upward_velocity+=1;
+            if(bird.i<10)
                 goUp(bird);
-        }, 5);
+            else {
+                bird.upward_velocity=1;
+            }
+        }, 0);
     }
     this.flap = function() {
+        this.down_velocity=1;
+        this.i=0;
         goUp(this);
     }
     this.goDown = function() {
-        this.y+=1;
+        this.y+=this.down_velocity;
+        this.down_velocity+=0.05;
         if(this.y>ARENA_HEIGHT-BIRD_HEIGHT)
             this.y=ARENA_HEIGHT-BIRD_HEIGHT;
     }
@@ -49,6 +58,7 @@ function World() {
     this.pipes.push(new Pipe(ARENA_WIDTH, ARENA_HEIGHT/2+BIRD_HEIGHT));
     this.pipes.push(new Pipe(ARENA_WIDTH+DISTANCE_BETWEEN_PIPES, ARENA_HEIGHT/2-BIRD_HEIGHT));
     this.pipes.push(new Pipe(ARENA_WIDTH+2*DISTANCE_BETWEEN_PIPES, ARENA_HEIGHT/2+BIRD_HEIGHT));
+    this.game_speed=0;
     world_reference=this;
 
     pipe_interval=setInterval(function() {
@@ -58,9 +68,10 @@ function World() {
                 world_reference.pipes[i].y = parseInt(Math.random()*(UPPER_LIMIT-LOWER_LIMIT)+LOWER_LIMIT);
                 world_reference.pipes[i].scoreCountedFlag=0;
             }
-            world_reference.pipes[i].x-=2;
+            world_reference.game_speed=(Math.min(20, Math.max(10,world_reference.score)))/10.0;
+            world_reference.pipes[i].x-=world_reference.game_speed;
         }
-    }, 10);
+    }, 1);
 
     this.bird=new Bird();
 
@@ -84,7 +95,7 @@ function World() {
                 }
             }
         }
-    }, 10);
+    }, 1);
 
     setInterval(function() {
         if(Math.round(world_reference.bird.y)>=ARENA_HEIGHT-BIRD_HEIGHT-1) {
@@ -105,7 +116,7 @@ function World() {
             clearInterval(pipe_interval);
             clearInterval(bird_interval);
         }
-    }, 10);
+    }, 1);
 
 }
 
@@ -163,7 +174,7 @@ $(document).ready(function() {
         if(e.keyCode == 32) {
             if(world.gameover==0) {
                 world.bird.flap();
-                world.bird.i=0;
+                // world.bird.i=0;
             }
         }
     });
