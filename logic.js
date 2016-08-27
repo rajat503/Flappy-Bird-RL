@@ -42,6 +42,7 @@ function Bird() {
 }
 
 function World() {
+    this.gameover=0;
     this.pipes=[];
     this.pipes.push(new Pipe(ARENA_WIDTH, ARENA_HEIGHT/2+BIRD_HEIGHT));
     this.pipes.push(new Pipe(ARENA_WIDTH+DISTANCE_BETWEEN_PIPES, ARENA_HEIGHT/2-BIRD_HEIGHT));
@@ -72,6 +73,15 @@ function World() {
             clearInterval(pipe_interval)
         }
     }, 10);
+
+    setInterval(function() {
+        if(Math.round(world_reference.bird.y)>=ARENA_HEIGHT-BIRD_HEIGHT-1) {
+            world_reference.gameover=1;
+            alert("Game Over");
+            clearInterval();
+        }
+    }, 10);
+
 }
 
 $(document).ready(function() {
@@ -125,8 +135,11 @@ $(document).ready(function() {
     }, 0);
 
     $('body').keyup(function(e){
-        if(e.keyCode == 32)
-            world.bird.flap();
-            world.bird.i=0
+        if(e.keyCode == 32) {
+            if(world.gameover==0) {
+                world.bird.flap();
+                world.bird.i=0;
+            }
+        }
     });
 });
