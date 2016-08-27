@@ -188,8 +188,8 @@ $(document).ready(function() {
     var spec = {}
     spec.update = 'qlearn'; // qlearn | sarsa
     spec.gamma = 0.9; // discount factor, [0, 1)
-    spec.epsilon = 0.1; // initial epsilon for epsilon-greedy policy, [0, 1)
-    spec.alpha = 0.1; // value function learning rate
+    spec.epsilon = 0.2; // initial epsilon for epsilon-greedy policy, [0, 1)
+    spec.alpha = 0.01; // value function learning rate
     spec.experience_add_every = 10; // number of time steps before we add another experience to replay memory
     spec.experience_size = 5000; // size of experience replay memory
     spec.learning_steps_per_iteration = 20;
@@ -216,24 +216,21 @@ $(document).ready(function() {
             world.bird.flap();
 
         if(world.gameover==1){
-            reward=-1000;
+            reward=-10;
             world=new World();
             current_score=0;
         }
         else {
-            reward=1
+            if(world.score>current_score) {
+                reward=10*world.score;
+                current_score=world.score;
+            }
+            else {
+                reward=0;
+            }
         }
-        // else {
-        //     if(world.score>current_score) {
-        //         reward=10000*world.score;
-        //         current_score=world.score;
-        //     }
-        //     else {
-        //         reward=10;
-        //     }
-        // }
         console.log(reward);
         agent.learn(reward);
-    }, 200);
+    }, 100);
 
 });
