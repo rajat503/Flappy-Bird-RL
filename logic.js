@@ -15,26 +15,27 @@ function Pipe(x, y) {
 }
 
 function Bird() {
-    i = 0;
+    this.i = 0;
     this.y=ARENA_HEIGHT/2;
     this.height=BIRD_HEIGHT;
     this.width=BIRD_WIDTH;
     var goUp = function(bird) {
         setTimeout(function() {
-            bird.y-=0.1;
-            i++;
-            console.log(bird.y);
-            if(i<10)
-                goUp(bird);
+            if(bird.y>=10)
+                bird.y-=10;
             else
-                i = 0;
-        }, 50);
+                bird.y=0
+            bird.i=bird.i+1;
+            console.log(bird.y);
+            if(bird.i<4)
+                goUp(bird);
+        }, 5);
     }
     this.flap = function() {
         goUp(this);
     }
     this.goDown = function() {
-        this.y+=2;
+        this.y+=1;
         if(this.y>ARENA_HEIGHT-BIRD_HEIGHT)
             this.y=ARENA_HEIGHT-BIRD_HEIGHT;
     }
@@ -42,9 +43,9 @@ function Bird() {
 
 function World() {
     this.pipes=[];
-    this.pipes.push(new Pipe(ARENA_WIDTH, 400));
-    this.pipes.push(new Pipe(ARENA_WIDTH+DISTANCE_BETWEEN_PIPES, 450));
-    this.pipes.push(new Pipe(ARENA_WIDTH+2*DISTANCE_BETWEEN_PIPES, 350));
+    this.pipes.push(new Pipe(ARENA_WIDTH, ARENA_HEIGHT/2+BIRD_HEIGHT));
+    this.pipes.push(new Pipe(ARENA_WIDTH+DISTANCE_BETWEEN_PIPES, ARENA_HEIGHT/2-BIRD_HEIGHT));
+    this.pipes.push(new Pipe(ARENA_WIDTH+2*DISTANCE_BETWEEN_PIPES, ARENA_HEIGHT/2+BIRD_HEIGHT));
     console.log(this.pipes);
     world_reference=this;
 
@@ -60,7 +61,7 @@ function World() {
     }, 10);
 
     this.bird=new Bird();
-    this.bird.flap();
+
     setInterval(function() {
         if(world_reference.bird.y<ARENA_HEIGHT-BIRD_HEIGHT) {
             world_reference.bird.goDown();
@@ -77,12 +78,12 @@ $(document).ready(function() {
     var world=new World();
 
     p=document.createElementNS(SVG, "rect");
-    p.setAttribute("x", 335);
+    p.setAttribute("x", ARENA_WIDTH*0.4);
     p.setAttribute("y", world.bird.y);
     p.setAttribute("height", world.bird.height);
     p.setAttribute("width", world.bird.width);
     p.setAttribute("class", "bird");
-    p.setAttribute("fill", "red");
+    p.setAttribute("fill", "black");
 
     $('.arena').append(p);
 
@@ -93,6 +94,7 @@ $(document).ready(function() {
         p.setAttribute("height", world.pipes[i].y);
         p.setAttribute("width", PIPE_WIDTH);
         p.setAttribute("class", "p"+i);
+        p.setAttribute("fill", "green");
         $('.arena').append(p);
 
         p=document.createElementNS(SVG, "rect");
@@ -101,6 +103,7 @@ $(document).ready(function() {
         p.setAttribute("height", ARENA_HEIGHT-world.pipes[i].y-PIPE_GAP);
         p.setAttribute("width", PIPE_WIDTH);
         p.setAttribute("class", "pl"+i);
+        p.setAttribute("fill", "green");
         $('.arena').append(p);
     }
 
@@ -120,4 +123,10 @@ $(document).ready(function() {
 
         }
     }, 0);
+
+    $('body').keyup(function(e){
+        if(e.keyCode == 32)
+            world.bird.flap();
+            world.bird.i=0
+    });
 });
