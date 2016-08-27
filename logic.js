@@ -167,6 +167,7 @@ $(document).ready(function() {
             $(class_name).attr("y", world.pipes[i].y+PIPE_GAP);
             $(class_name).attr("height", ARENA_HEIGHT-world.pipes[i].y-PIPE_GAP);
 
+            $('.score').text("Score = "+world.score);
         }
     }, 0);
 
