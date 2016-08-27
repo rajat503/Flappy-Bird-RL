@@ -8,7 +8,7 @@ var BIRD_HEIGHT=40;
 var DISTANCE_BETWEEN_PIPES=380;
 var UPPER_LIMIT=ARENA_HEIGHT*0.75;
 var LOWER_LIMIT=ARENA_HEIGHT*0.25;
-
+var BIRD_X=ARENA_WIDTH*0.4
 function Pipe(x, y) {
     this.x = x;
     this.y = y;
@@ -26,7 +26,6 @@ function Bird() {
             else
                 bird.y=0
             bird.i=bird.i+1;
-            console.log(bird.y);
             if(bird.i<4)
                 goUp(bird);
         }, 5);
@@ -47,7 +46,6 @@ function World() {
     this.pipes.push(new Pipe(ARENA_WIDTH, ARENA_HEIGHT/2+BIRD_HEIGHT));
     this.pipes.push(new Pipe(ARENA_WIDTH+DISTANCE_BETWEEN_PIPES, ARENA_HEIGHT/2-BIRD_HEIGHT));
     this.pipes.push(new Pipe(ARENA_WIDTH+2*DISTANCE_BETWEEN_PIPES, ARENA_HEIGHT/2+BIRD_HEIGHT));
-    console.log(this.pipes);
     world_reference=this;
 
     pipe_interval=setInterval(function() {
@@ -57,16 +55,14 @@ function World() {
                 world_reference.pipes[i].y = parseInt(Math.random()*(UPPER_LIMIT-LOWER_LIMIT)+LOWER_LIMIT);
             }
             world_reference.pipes[i].x-=2;
-            console.log(world_reference.pipes[i]);
         }
     }, 10);
 
     this.bird=new Bird();
 
-    setInterval(function() {
+    bird_interval=setInterval(function() {
         if(world_reference.bird.y<ARENA_HEIGHT-BIRD_HEIGHT) {
             world_reference.bird.goDown();
-            console.log(world_reference.bird.y);
         }
         else {
             clearInterval(this)
@@ -77,8 +73,21 @@ function World() {
     setInterval(function() {
         if(Math.round(world_reference.bird.y)>=ARENA_HEIGHT-BIRD_HEIGHT-1) {
             world_reference.gameover=1;
+        }
+        bx=BIRD_X;
+        by=world_reference.bird.y;
+        for(i=0;i<world_reference.pipes.length;i++) {
+            px=world_reference.pipes[i].x;
+            py=world_reference.pipes[i].y;
+            if(!(bx+BIRD_WIDTH < px || bx > px+PIPE_WIDTH || (by > py && by+BIRD_HEIGHT < py+PIPE_GAP))) {
+                world_reference.gameover=1;
+            }
+        }
+        if(world_reference.gameover==1) {
             alert("Game Over");
-            clearInterval();
+            clearInterval(this);
+            clearInterval(pipe_interval);
+            clearInterval(bird_interval)
         }
     }, 10);
 
@@ -88,7 +97,7 @@ $(document).ready(function() {
     var world=new World();
 
     p=document.createElementNS(SVG, "rect");
-    p.setAttribute("x", ARENA_WIDTH*0.4);
+    p.setAttribute("x", BIRD_X);
     p.setAttribute("y", world.bird.y);
     p.setAttribute("height", world.bird.height);
     p.setAttribute("width", world.bird.width);
