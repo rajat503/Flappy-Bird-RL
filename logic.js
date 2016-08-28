@@ -181,20 +181,20 @@ $(document).ready(function() {
 
 
     var env = {};
-    env.getNumStates = function() { return 9; }
+    env.getNumStates = function() { return 7; }
     env.getMaxNumActions = function() { return 2; }
 
     // create the DQN agent
     var spec = {}
     spec.update = 'qlearn'; // qlearn | sarsa
-    spec.gamma = 0.9; // discount factor, [0, 1)
-    spec.epsilon = 0.2; // initial epsilon for epsilon-greedy policy, [0, 1)
+    spec.gamma = 0.99; // discount factor, [0, 1)
+    spec.epsilon = 0.1; // initial epsilon for epsilon-greedy policy, [0, 1)
     spec.alpha = 0.01; // value function learning rate
-    spec.experience_add_every = 10; // number of time steps before we add another experience to replay memory
-    spec.experience_size = 5000; // size of experience replay memory
-    spec.learning_steps_per_iteration = 20;
+    spec.experience_add_every = 1; // number of time steps before we add another experience to replay memory
+    spec.experience_size = 0; // size of experience replay memory
+    spec.learning_steps_per_iteration = 7;
     spec.tderror_clamp = 1.0; // for robustness
-    spec.num_hidden_units = 100 // number of neurons in hidden layer
+    spec.num_hidden_units = 500 // number of neurons in hidden layer
 
     agent = new RL.DQNAgent(env, spec);
 
@@ -206,8 +206,8 @@ $(document).ready(function() {
             s.push(world.pipes[i].y);
         }
         s.push(world.bird.y);
-        s.push(world.bird.upward_velocity);
-        s.push(world.bird.down_velocity);
+        // s.push(world.bird.upward_velocity);
+        // s.push(world.bird.down_velocity);
 
 
         var action = agent.act(s);
@@ -216,21 +216,22 @@ $(document).ready(function() {
             world.bird.flap();
 
         if(world.gameover==1){
-            reward=-10;
+            reward=Math.min(-0.15*current_score, -10);
+            delete world;
             world=new World();
             current_score=0;
         }
         else {
             if(world.score>current_score) {
-                reward=10*world.score;
+                reward=20;
                 current_score=world.score;
             }
             else {
-                reward=0;
+                reward=1;
             }
         }
         console.log(reward);
         agent.learn(reward);
-    }, 100);
+    }, 200);
 
 });
