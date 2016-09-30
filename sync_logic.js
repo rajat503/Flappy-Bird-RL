@@ -17,35 +17,18 @@ function Pipe(x, y) {
 }
 
 function Bird() {
-    this.down_velocity=1;
-    this.upward_velocity=1;
-    this.i = 0;
+    this.velocity=1;
     this.y=ARENA_HEIGHT/2;
     this.height=BIRD_HEIGHT;
     this.width=BIRD_WIDTH;
-    var goUp = function(bird) {
-        setTimeout(function() {
-            if(bird.y>=15)
-                bird.y-=bird.upward_velocity;
-            else
-                bird.y=0
-            bird.i=bird.i+1;
-            bird.upward_velocity+=1;
-            if(bird.i<10)
-                goUp(bird);
-            else {
-                bird.upward_velocity=1;
-            }
-        }, 0);
-    }
+
     this.flap = function() {
-        this.down_velocity=1;
-        this.i=0;
-        goUp(this);
+        // console.log("in flap")
+        if(this.y>10)
+            this.y-=10
     }
     this.goDown = function() {
-        this.y+=this.down_velocity;
-        this.down_velocity+=0.05;
+        this.y+=1.5
         if(this.y>ARENA_HEIGHT-BIRD_HEIGHT)
             this.y=ARENA_HEIGHT-BIRD_HEIGHT;
     }
@@ -61,7 +44,7 @@ function World() {
     this.game_speed=0;
     world_reference=this;
 
-    pipe_interval=setInterval(function() {
+    this.shift_pipes = function () {
         for(i=0;i<world_reference.pipes.length;i++) {
             if(world_reference.pipes[i].x+PIPE_WIDTH <= 0) {
                 world_reference.pipes[i].x = ARENA_WIDTH;
@@ -71,33 +54,28 @@ function World() {
             world_reference.game_speed=(Math.min(20, Math.max(10,world_reference.score)))/10.0;
             world_reference.pipes[i].x-=2;
         }
-    }, 1);
+    }
 
     this.bird=new Bird();
 
-    bird_interval=setInterval(function() {
+    this.gravity = function() {
         if(world_reference.bird.y<ARENA_HEIGHT-BIRD_HEIGHT) {
             world_reference.bird.goDown();
         }
-        else {
-            clearInterval(this)
-            clearInterval(pipe_interval)
-        }
-    }, 10);
+    }
 
-    scoreInterval=setInterval(function() {
+    this.updateScore = function() {
         for(i=0;i<world_reference.pipes.length;i++) {
             if(world_reference.pipes[i].scoreCountedFlag == 0) {
                 if(BIRD_X+BIRD_WIDTH >= world_reference.pipes[i].x && world_reference.pipes[i].y < world_reference.bird.y && world_reference.pipes[i].y+PIPE_GAP > world_reference.bird.y+BIRD_HEIGHT) {
                     world_reference.pipes[i].scoreCountedFlag = 1;
                     world_reference.score++;
-                    // console.log(world_reference.score);
                 }
             }
         }
-    }, 1);
+    }
 
-    setInterval(function() {
+    this.checkGameOver = function() {
         if(Math.round(world_reference.bird.y)>=ARENA_HEIGHT-BIRD_HEIGHT-1) {
             world_reference.gameover=1;
         }
@@ -110,28 +88,27 @@ function World() {
                 world_reference.gameover=1;
             }
         }
-        if(world_reference.gameover==1) {
-            clearInterval(this);
-            clearInterval(pipe_interval);
-            clearInterval(bird_interval);
-        }
-    }, 1);
+    }
 
 }
 
 $(document).ready(function() {
-    var world=new World();
 
+    //create svg canvas
+    var world=new World();
     p=document.createElementNS(SVG, "rect");
+
+    //add bird to svg
     p.setAttribute("x", BIRD_X);
     p.setAttribute("y", world.bird.y);
     p.setAttribute("height", world.bird.height);
     p.setAttribute("width", world.bird.width);
     p.setAttribute("class", "bird");
     p.setAttribute("fill", "black");
-
     $('.arena').append(p);
 
+
+    //add pipes to svg
     for(i=0;i<world.pipes.length;i++) {
         p=document.createElementNS(SVG, "rect");
         p.setAttribute("x", world.pipes[i].x);
@@ -152,7 +129,7 @@ $(document).ready(function() {
         $('.arena').append(p);
     }
 
-    setInterval(function(){
+    function updateSVG() {
         $('.bird').attr("y", world.bird.y);
 
         for(i=0;i<world.pipes.length;i++) {
@@ -168,39 +145,50 @@ $(document).ready(function() {
 
             $('.score').text("Score = "+world.score);
         }
-    }, 0);
-
-    // $('body').keyup(function(e){
-    //     if(e.keyCode == 32) {
-    //         if(world.gameover==0) {
-    //             world.bird.flap();
-    //             // world.bird.i=0;
-    //         }
-    //     }
-    // });
-
+    }
+    updateSVG();
 
     var env = {};
-    env.getNumStates = function() { return 6; }
+    env.getNumStates = function() { return 3; }
     env.getMaxNumActions = function() { return 2; }
 
     // create the DQN agent
     var spec = {}
     spec.update = 'qlearn'; // qlearn | sarsa
     spec.gamma = 0.9; // discount factor, [0, 1)
-    spec.epsilon = 0.2; // initial epsilon for epsilon-greedy policy, [0, 1)
-    spec.alpha = 0.05; // value function learning rate
-    // spec.experience_add_every = 5; // number of time steps before we add another experience to replay memory
-    // spec.experience_size = 5000; // size of experience replay memory
-    // spec.learning_steps_per_iteration = 10;
-    // spec.tderror_clamp = 1.0; // for robustness
-    spec.num_hidden_units = 100 // number of neurons in hidden layer
-
+    spec.epsilon = 0.1; // initial epsilon for epsilon-greedy policy, [0, 1)
+    spec.alpha = 0.0001; // value function learning rate
+    spec.experience_add_every = 5; // number of time steps before we add another experience to replay memory
+    spec.experience_size = 5000; // size of experience replay memory
+    spec.learning_steps_per_iteration = 10;
+    spec.tderror_clamp = 1.0; // for robustness
+    spec.num_hidden_units = 500 // number of neurons in hidden layer
     agent = new RL.DQNAgent(env, spec);
+    closest_x =0;
 
+    current_score=0;
     setInterval(function(){
         s=[];
-        closest_x =0;
+        s.push(world.pipes[closest_x].x);
+        s.push(world.pipes[closest_x].y);
+        // s.push(world.pipes[(closest_x+1)%3].x);
+        // s.push(world.pipes[(closest_x+1)%3].y);
+        // s.push(world.pipes[(closest_x+2)%3].x);
+        // s.push(world.pipes[(closest_x+2)%3].y);
+        s.push(world.bird.y);
+
+        var action = agent.act(s);
+
+        if(action==1)
+            world.bird.flap()
+
+        world.shift_pipes();
+        world.gravity();
+        world.updateScore();
+        world.checkGameOver();
+        updateSVG();
+
+        current_score=world.score;
         min_distance=10000;
         flag=1;
         for(i=0;i<world.pipes.length;i++) {
@@ -214,42 +202,29 @@ $(document).ready(function() {
                 flag=0;
             }
         }
-        reward=(ARENA_HEIGHT-Math.abs((world.pipes[closest_x].y+PIPE_GAP/2)-world.bird.y))/100;
-        if(world.bird.y<world.pipes[closest_x].y || world.pipes[closest_x]+PIPE_GAP<world.bird.y)
-        {
-            reward=0-Math.abs((world.pipes[closest_x].y+PIPE_GAP/2)-world.bird.y)/1000;
-        }
-        else {
-            {
-                reward=reward/10;
-            }
-        }
         if(flag==0)
         {
-            reward=10;
+            reward=10*(current_score+1);
         }
-        s.push(world.pipes[closest_x].x);
-        s.push(world.pipes[closest_x].y);
-        s.push(world.pipes[(closest_x+1)%3].x);
-        s.push(world.pipes[(closest_x+1)%3].y);
-        // s.push(world.pipes[(closest_x+2)%3].x);
-        // s.push(world.pipes[(closest_x+2)%3].y);
-        s.push(world.bird.y);
-        s.push(BIRD_X);
-
-        var action = agent.act(s);
-        // console.log(action);
-        if(action==1)
-            world.bird.flap();
+        else {
+            if(world.bird.y>world.pipes[closest_x].y && world.bird.y<world.pipes[closest_x].y+PIPE_GAP)
+            {
+                reward=2*(current_score+1);
+            }
+            else {
+                reward=Math.abs((world.pipes[closest_x].y+PIPE_GAP/2)-world.bird.y)/-100
+            }
+        }
 
         if(world.gameover==1){
-            reward=-100;
-            delete world;
-            world=new World();
-            current_score=0;
-        }
-        console.log(reward);
-        agent.learn(reward);
+           reward=-10;
+           delete world;
+           world=new World();
+           current_score=0;
+       }
+       reward=reward/10;
+       console.log(agent.tderror);
+       agent.learn(reward);
     }, 0);
 
 });
